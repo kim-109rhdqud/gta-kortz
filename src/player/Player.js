@@ -14,7 +14,9 @@ export const DEFAULT_PLAYER_SETTINGS = {
   crouchHeight: 1.15,  // m
   radius: 0.3,         // m
   stanceTime: 0.35,    // 서기↔앉기 전환 시간(초)
-  accel: 18            // 가감속
+  accel: 18,           // 가감속
+  jumpHeight: 0.9,     // m (점프 최고 높이)
+  gravity: 22          // m/s²
 };
 
 export class Player {
@@ -27,6 +29,8 @@ export class Player {
     this.stance = 0; // 0 = 서있음, 1 = 앉음 (보간값)
     this.moving = false;
     this.running = false;
+    this.vy = 0;
+    this.grounded = true;
 
     this.group = new THREE.Group();
     scene.add(this.group);
@@ -79,6 +83,8 @@ export class Player {
     this.heading = 0;
     this.crouching = false;
     this.stance = 0;
+    this.vy = 0;
+    this.grounded = true;
     this.syncVisual();
   }
 
@@ -95,7 +101,22 @@ export class Player {
    */
   update(dt, input, cameraYaw) {
     const s = this.settings;
-    this.crouching = input.crouch;
+    // 점프: 바닥에 있을 때만. 점프하면 앉기는 해제된다.
+    if (input.jump && this.grounded) {
+      this.vy = Math.sqrt(2 * s.gravity * s.jumpHeight);
+      this.grounded = false;
+      this.onJump?.();
+    }
+    if (!this.grounded) {
+      this.vy -= s.gravity * dt;
+      this.position.y += this.vy * dt;
+      if (this.position.y <= 0) {
+        this.position.y = 0;
+        this.vy = 0;
+        this.grounded = true;
+      }
+    }
+    this.crouching = input.crouch && this.grounded;
     const target = this.crouching ? 1 : 0;
     const step = dt / s.stanceTime;
     this.stance += Math.sign(target - this.stance) * Math.min(step, Math.abs(target - this.stance));
@@ -116,7 +137,8 @@ export class Player {
     const maxSpeed = this.crouching ? s.crouchSpeed : (input.run ? s.runSpeed : s.walkSpeed);
 
     const tvx = dirX * maxSpeed, tvz = dirZ * maxSpeed;
-    const k = Math.min(1, s.accel * dt);
+    // 공중에서는 방향 전환이 둔하다
+    const k = Math.min(1, (this.grounded ? s.accel : s.accel * 0.15) * dt);
     this.velocity.x += (tvx - this.velocity.x) * k;
     this.velocity.z += (tvz - this.velocity.z) * k;
 

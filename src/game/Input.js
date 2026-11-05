@@ -16,6 +16,7 @@ export class Input {
       this.down.add(e.code);
       this.pressed.add(e.code);
       if (e.code === "KeyC") this.crouchToggle = !this.crouchToggle;
+      if (e.code === "Space") this.crouchToggle = false; // 점프하면 앉기 토글 해제
     });
     window.addEventListener("keyup", (e) => this.down.delete(e.code));
     window.addEventListener("blur", () => {
@@ -31,7 +32,8 @@ export class Input {
     const crouchHold = d.has("ControlLeft") || d.has("ControlRight");
     const crouch = crouchHold || this.crouchToggle;
     const interact = this.frameKeys.has("KeyE");
-    return { forward, right, run, crouch, interact };
+    const jump = this.frameKeys.has("Space");
+    return { forward, right, run, crouch, interact, jump };
   }
 
   /** 프레임 시작 시 한 번 호출. 이번 프레임에 눌린 키 집합을 돌려주고 read() 에서도 같은 집합을 쓴다. */
