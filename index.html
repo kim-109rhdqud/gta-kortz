@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laser Grid Trainer</title>
+    <meta name="description" content="레이저 그리드 회피 연습용 3D 트레이너. 비공식 팬 제작 연습 도구." />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+
+    <!-- 메인 메뉴 -->
+    <section id="menu" class="overlay">
+      <div class="menu-card">
+        <header class="menu-head">
+          <div class="brand">
+            <span class="brand-mark"></span>
+            <h1>Laser Grid Trainer</h1>
+          </div>
+          <p class="tagline">금고 레이저 구간을 3D로 직접 걸어서 연습하는 비공식 트레이너</p>
+        </header>
+
+        <div class="menu-grid">
+          <div class="field">
+            <label>난이도</label>
+            <div class="seg" data-setting="difficulty">
+              <button data-value="normal">Normal</button>
+              <button data-value="hard">Hard</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>패턴</label>
+            <div class="seg" data-setting="family">
+              <button data-value="0">P1</button>
+              <button data-value="1">P2</button>
+              <button data-value="2">P3</button>
+              <button data-value="random">랜덤</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>접촉 시</label>
+            <div class="seg" data-setting="hitMode">
+              <button data-value="section">구간 재시작</button>
+              <button data-value="full">처음부터</button>
+              <button data-value="free">카운트만</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>배속</label>
+            <div class="seg" data-setting="timeScale">
+              <button data-value="0.25">0.25×</button>
+              <button data-value="0.5">0.5×</button>
+              <button data-value="0.75">0.75×</button>
+              <button data-value="1">1×</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" data-toggle="panels" /> 패널(E)로 구간 레이저 차단</label>
+          <label class="toggle"><input type="checkbox" data-toggle="randomPhase" /> 시작 시 레이저 타이밍 랜덤</label>
+          <label class="toggle"><input type="checkbox" data-toggle="showMinimap" /> 미니맵 표시</label>
+          <label class="toggle"><input type="checkbox" data-toggle="showTimeline" /> 루프 타임라인 표시</label>
+        </div>
+
+        <details class="advanced">
+          <summary>세부 설정 (이동 속도 · 키 · 카메라)</summary>
+          <div class="sliders">
+            <label>걷기 속도 <span data-out="player.walkSpeed"></span> m/s
+              <input type="range" min="1" max="3" step="0.05" data-range="player.walkSpeed" /></label>
+            <label>달리기 속도 <span data-out="player.runSpeed"></span> m/s
+              <input type="range" min="2" max="7" step="0.1" data-range="player.runSpeed" /></label>
+            <label>앉아 걷기 속도 <span data-out="player.crouchSpeed"></span> m/s
+              <input type="range" min="0.6" max="2.5" step="0.05" data-range="player.crouchSpeed" /></label>
+            <label>서있는 키 <span data-out="player.standHeight"></span> m
+              <input type="range" min="1.5" max="2.1" step="0.01" data-range="player.standHeight" /></label>
+            <label>앉은 키 <span data-out="player.crouchHeight"></span> m
+              <input type="range" min="0.8" max="1.5" step="0.01" data-range="player.crouchHeight" /></label>
+            <label>몸통 반지름 <span data-out="player.radius"></span> m
+              <input type="range" min="0.15" max="0.5" step="0.01" data-range="player.radius" /></label>
+            <label>마우스 감도 <span data-out="cameraSensitivity"></span>
+              <input type="range" min="0.3" max="3" step="0.1" data-range="cameraSensitivity" /></label>
+          </div>
+          <button class="ghost" id="reset-settings">기본값으로</button>
+        </details>
+
+        <button id="start" class="primary">시작</button>
+
+        <div class="controls-help">
+          <span><kbd>W A S D</kbd> 이동</span>
+          <span><kbd>Shift</kbd> 달리기</span>
+          <span><kbd>Ctrl</kbd> 앉기 (홀드) · <kbd>C</kbd> 토글</span>
+          <span><kbd>E</kbd> 패널</span>
+          <span><kbd>R</kbd> 구간 재시작</span>
+          <span><kbd>V</kbd> 탑뷰</span>
+          <span><kbd>1-4</kbd> 배속</span>
+          <span><kbd>M</kbd> 미니맵</span>
+          <span><kbd>Esc</kbd> 일시정지</span>
+        </div>
+
+        <footer class="disclaimer">
+          <p>이 사이트는 팬이 만든 <strong>비공식 연습 도구</strong>입니다. Rockstar Games 및 Take-Two Interactive와 무관하며, 게임의 이름·캐릭터·그래픽·음악을 사용하지 않습니다.</p>
+          <p>레이저 패턴 데이터 출처: <a href="https://gta5-madara.com/en/online/the-kortz-center-heist-update/laser-grid-simulator/" target="_blank" rel="noopener">gta5-madara.com Laser Grid Simulator</a></p>
+        </footer>
+      </div>
+    </section>
+
+    <!-- HUD -->
+    <section id="hud" class="hidden">
+      <div class="hud-top">
+        <div class="hud-chip" id="layout-label">Normal · P1</div>
+        <div class="hud-chip" id="timer">0.00s</div>
+        <div class="hud-chip hud-hits"><span>접촉</span> <b id="hits">0</b></div>
+        <div class="hud-chip" id="speed-chip">1×</div>
+      </div>
+      <div class="sections" id="sections">
+        <div class="section-pill" data-sec="1">구간 1</div>
+        <div class="section-pill" data-sec="2">구간 2</div>
+        <div class="section-pill" data-sec="3">구간 3</div>
+      </div>
+      <div id="status" class="status"></div>
+      <div id="prompt" class="prompt"></div>
+      <div id="timeline" class="timeline"><div class="timeline-bar"><i id="timeline-cursor"></i></div><span id="timeline-text">0.0s / 40s</span></div>
+      <canvas id="minimap" width="220" height="340"></canvas>
+      <div class="hud-hint">Esc 메뉴 · R 구간 재시작 · V 탑뷰 · 1-4 배속</div>
+      <div id="flash"></div>
+    </section>
+
+    <!-- 일시정지 -->
+    <section id="pause" class="overlay hidden">
+      <div class="dialog">
+        <h2>일시정지</h2>
+        <div class="dialog-row">
+          <label>배속</label>
+          <div class="seg" data-setting="timeScale">
+            <button data-value="0.25">0.25×</button>
+            <button data-value="0.5">0.5×</button>
+            <button data-value="0.75">0.75×</button>
+            <button data-value="1">1×</button>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button class="primary" id="resume">계속 (Esc)</button>
+          <button id="restart-run">처음부터</button>
+          <button class="ghost" id="to-menu">메뉴로</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 결과 -->
+    <section id="result" class="overlay hidden">
+      <div class="dialog">
+        <h2 id="result-title">통과!</h2>
+        <div class="result-grid">
+          <div><span>레이아웃</span><b id="result-layout"></b></div>
+          <div><span>시간</span><b id="result-time"></b></div>
+          <div><span>접촉</span><b id="result-hits"></b></div>
+          <div><span>무접촉 최고 기록</span><b id="result-best"></b></div>
+        </div>
+        <div class="dialog-actions">
+          <button class="primary" id="result-retry">다시 (Enter)</button>
+          <button class="ghost" id="result-menu">메뉴로</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="mobile-warning" class="hidden">
+      <p>이 트레이너는 키보드와 마우스가 필요합니다. PC 브라우저에서 열어주세요.</p>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
