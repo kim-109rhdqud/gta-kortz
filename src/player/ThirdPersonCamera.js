@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ROOM, ENTRY } from "../world/coords.js";
+import { ROOM, ENTRY, EXIT } from "../world/coords.js";
 
 /**
  * 3인칭 뒤쪽 카메라. 마우스로 회전(포인터 락), 휠로 거리.
@@ -77,7 +77,7 @@ export class ThirdPersonCamera {
     );
     // 카메라가 벽 밖으로 나가지 않도록 방 안으로 클램프
     this._pos.y = THREE.MathUtils.clamp(this._pos.y, 0.3, ROOM.height - 0.1);
-    this._pos.z = THREE.MathUtils.clamp(this._pos.z, -ROOM.halfL + 0.15, ROOM.halfL + ENTRY.depth - 0.15);
+    this._pos.z = THREE.MathUtils.clamp(this._pos.z, -ROOM.halfL - EXIT.depth + 0.15, ROOM.halfL + ENTRY.depth - 0.15);
     this._pos.x = THREE.MathUtils.clamp(this._pos.x, -ROOM.halfW + 0.15, ROOM.halfW - 0.15);
     if (this._first) {
       this.camera.position.copy(this._pos);

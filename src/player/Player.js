@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ROOM, ENTRY } from "../world/coords.js";
+import { ROOM, ENTRY, EXIT } from "../world/coords.js";
 
 /** 시작 위치: 진입 통로 안쪽 끝 (첫 레이저보다 뒤) */
 export const START_Z = ROOM.halfL + 2.4;
@@ -151,7 +151,7 @@ export class Player {
     // 벽 충돌: 시작 구역까지 포함해 한 덩어리의 방
     const r = s.radius;
     this.position.x = THREE.MathUtils.clamp(this.position.x, -ROOM.halfW + r, ROOM.halfW - r);
-    this.position.z = THREE.MathUtils.clamp(this.position.z, -ROOM.halfL - 0.4, ROOM.halfL + ENTRY.depth - r);
+    this.position.z = THREE.MathUtils.clamp(this.position.z, -ROOM.halfL - EXIT.depth + r, ROOM.halfL + ENTRY.depth - r);
 
     if (this.moving) {
       const targetHeading = Math.atan2(dirX, dirZ) + Math.PI; // 모델의 -Z 가 정면

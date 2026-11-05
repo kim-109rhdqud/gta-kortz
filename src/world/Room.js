@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ROOM, ENTRY, worldYToThreeZ } from "./coords.js";
+import { ROOM, ENTRY, EXIT, worldYToThreeZ } from "./coords.js";
 import { SECTIONS, BOUNDS } from "../laser/LaserModel.js";
 
 const SECTION_COLORS = [0x3fd0ff, 0x7dff9a, 0xffb86b];
@@ -56,7 +56,6 @@ export class Room {
     };
     mk(ROOM.length, -ROOM.halfW, 0, Math.PI / 2);
     mk(ROOM.length, ROOM.halfW, 0, -Math.PI / 2);
-    mk(ROOM.width, 0, -ROOM.halfL, 0);
     // 시작 구역(입구 쪽): 본 방과 같은 폭으로 그대로 이어진다. 벽 없음.
     const zEnd = ROOM.halfL + ENTRY.depth;
     const zMid = ROOM.halfL + ENTRY.depth / 2;
@@ -80,6 +79,30 @@ export class Room {
     const corridorLight = new THREE.PointLight(0x9fd8ff, 12, 16, 1.6);
     corridorLight.position.set(0, h - 0.2, zMid);
     this.group.add(corridorLight);
+    // 도착 구역(금고 쪽 끝): 같은 폭으로 이어진다
+    const xEnd = -ROOM.halfL - EXIT.depth;
+    const xMid = -ROOM.halfL - EXIT.depth / 2;
+    mk(EXIT.depth, -ROOM.halfW, xMid, Math.PI / 2);
+    mk(EXIT.depth, ROOM.halfW, xMid, -Math.PI / 2);
+    mk(ROOM.width, 0, xEnd, 0);
+    const exitFloor = new THREE.Mesh(
+      new THREE.PlaneGeometry(ROOM.width, EXIT.depth),
+      new THREE.MeshStandardMaterial({ color: 0x0e151c, roughness: 0.9 })
+    );
+    exitFloor.rotation.x = -Math.PI / 2;
+    exitFloor.position.set(0, 0, xMid);
+    this.group.add(exitFloor);
+    const exitCeil = new THREE.Mesh(
+      new THREE.PlaneGeometry(ROOM.width, EXIT.depth),
+      new THREE.MeshStandardMaterial({ color: 0x0a0f14, roughness: 1, side: THREE.BackSide })
+    );
+    exitCeil.rotation.x = -Math.PI / 2;
+    exitCeil.position.set(0, h, xMid);
+    this.group.add(exitCeil);
+    const exitLight = new THREE.PointLight(0xffd36b, 10, 16, 1.6);
+    exitLight.position.set(0, h - 0.2, xMid);
+    this.group.add(exitLight);
+
     // 시작 위치 표시
     const startMark = new THREE.Mesh(
       new THREE.RingGeometry(0.4, 0.46, 40),
@@ -145,17 +168,15 @@ export class Room {
     this.group.add(entrance);
     this.entranceGate = entrance;
 
-    // 도착 게이트 (-Z): 발광 패널
+    // 도착선 (-Z): 바닥 발광선. 이 선을 넘으면 통과.
     const exit = new THREE.Group();
-    const frame = new THREE.Mesh(new THREE.BoxGeometry(gw, 2.6, 0.15), frameMat);
-    frame.position.set(0, 1.3, -ROOM.halfL);
-    exit.add(frame);
-    const glow = new THREE.Mesh(
-      new THREE.PlaneGeometry(gw - 0.6, 2.1),
-      new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.35, toneMapped: false, side: THREE.DoubleSide })
+    const endLine = new THREE.Mesh(
+      new THREE.PlaneGeometry(ROOM.width, 0.08),
+      new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.85, toneMapped: false })
     );
-    glow.position.set(0, 1.1, -ROOM.halfL + 0.09);
-    exit.add(glow);
+    endLine.rotation.x = -Math.PI / 2;
+    endLine.position.set(0, 0.005, -ROOM.halfL);
+    exit.add(endLine);
     this.group.add(exit);
     this.exitGate = exit;
   }

@@ -17,6 +17,10 @@ export const FLOOR_Z = BOUNDS.z0;
 export const ENTRY = {
   depth: 6       // 시작 구역 길이 (Z). 폭은 본 방과 같고 벽으로 막혀 있지 않다.
 };
+/** 금고 쪽(-Z) 끝에 이어지는 도착 구역. 역시 같은 폭, 벽 없음. */
+export const EXIT = {
+  depth: 6
+};
 
 export const ROOM = {
   width: BOUNDS.x1 - BOUNDS.x0,   // X 방향 폭 (13.8m)

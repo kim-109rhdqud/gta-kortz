@@ -330,7 +330,7 @@ export class Game {
       else this.checkCollision();
 
       // 도착 판정: 금고 게이트 통과
-      if (this.player.position.z < -ROOM.halfL + 0.2 && this.state === "running") {
+      if (this.player.position.z < -ROOM.halfL && this.state === "running") {
         this.onCleared();
       }
       this.ui.setTimer(this.runTime);
