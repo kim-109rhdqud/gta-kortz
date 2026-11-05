@@ -1,4 +1,4 @@
-import { ROOM, CY, toThree } from "../world/coords.js";
+import { ROOM, ENTRY, CY, toThree } from "../world/coords.js";
 import { SECTIONS, LOOP_SECONDS } from "../laser/LaserModel.js";
 import { LASER_COLORS } from "../laser/LaserRenderer.js";
 
@@ -139,14 +139,18 @@ export class UI {
     if (!show || this.hud.classList.contains("hidden")) return;
     const c = this.mctx, W = this.minimap.width, H = this.minimap.height;
     const pad = 12;
+    const totalL = ROOM.length + ENTRY.depth;
     const sx = (W - pad * 2) / ROOM.width;
-    const sz = (H - pad * 2) / ROOM.length;
+    const sz = (H - pad * 2) / totalL;
     const s = Math.min(sx, sz);
-    const ox = W / 2, oz = H / 2;
+    const ox = W / 2, oz = H / 2 - (ENTRY.depth / 2) * s;
     const mx = (x) => ox + x * s;          // Three X → 캔버스 x
     const mz = (z) => oz + z * s;          // Three Z(+는 입구) → 캔버스 y (아래)
 
     c.clearRect(0, 0, W, H);
+    // 진입 통로
+    c.fillStyle = "rgba(120,160,190,0.08)";
+    c.fillRect(mx(-ENTRY.halfW), mz(ROOM.halfL), ENTRY.halfW * 2 * s, ENTRY.depth * s);
     // 구간 틴트
     SECTIONS.forEach((sec, i) => {
       const za = sec.y0 - CY, zb = sec.y1 - CY;
@@ -189,7 +193,7 @@ export class UI {
     c.fillStyle = "rgba(190,210,225,0.7)";
     c.font = "10px system-ui";
     c.fillText("도착", mx(-ROOM.halfW) + 2, mz(-ROOM.halfL) - 3);
-    c.fillText("입구", mx(-ROOM.halfW) + 2, mz(ROOM.halfL) + 10);
+    c.fillText("입구", mx(-ROOM.halfW) + 2, mz(ROOM.halfL + ENTRY.depth) + 10);
   }
 }
 

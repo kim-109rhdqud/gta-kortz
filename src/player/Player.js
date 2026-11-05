@@ -1,5 +1,8 @@
 import * as THREE from "three";
-import { ROOM } from "../world/coords.js";
+import { ROOM, ENTRY } from "../world/coords.js";
+
+/** 시작 위치: 진입 통로 안쪽 끝 (첫 레이저보다 뒤) */
+export const START_Z = ROOM.halfL + 2.4;
 
 /**
  * 플레이어 캡슐 컨트롤러.
@@ -22,7 +25,7 @@ export const DEFAULT_PLAYER_SETTINGS = {
 export class Player {
   constructor(scene, settings) {
     this.settings = { ...DEFAULT_PLAYER_SETTINGS, ...(settings || {}) };
-    this.position = new THREE.Vector3(0, 0, ROOM.halfL - 1.2);
+    this.position = new THREE.Vector3(0, 0, START_Z);
     this.velocity = new THREE.Vector3();
     this.heading = 0; // 시선 방향(라디안). 0 = -Z 방향(금고 쪽)
     this.crouching = false;
@@ -78,7 +81,7 @@ export class Player {
   }
 
   reset(zOverride) {
-    this.position.set(0, 0, zOverride ?? ROOM.halfL - 1.2);
+    this.position.set(0, 0, zOverride ?? START_Z);
     this.velocity.set(0, 0, 0);
     this.heading = 0;
     this.crouching = false;
@@ -142,13 +145,26 @@ export class Player {
     this.velocity.x += (tvx - this.velocity.x) * k;
     this.velocity.z += (tvz - this.velocity.z) * k;
 
+    const prevZ = this.position.z;
     this.position.x += this.velocity.x * dt;
     this.position.z += this.velocity.z * dt;
 
-    // 벽 충돌: 방 안으로 클램프 (입구/도착 게이트 바깥으로는 조금 나갈 수 있게 여유)
+    // 벽 충돌: 본 방 / 진입 통로 / 입구 개구부
     const r = s.radius;
-    this.position.x = THREE.MathUtils.clamp(this.position.x, -ROOM.halfW + r, ROOM.halfW - r);
-    this.position.z = THREE.MathUtils.clamp(this.position.z, -ROOM.halfL - 0.4, ROOM.halfL - r);
+    const gateZ = ROOM.halfL;
+    if (this.position.z > gateZ) {
+      // 통로 안
+      this.position.x = THREE.MathUtils.clamp(this.position.x, -ENTRY.halfW + r, ENTRY.halfW - r);
+      this.position.z = Math.min(this.position.z, gateZ + ENTRY.depth - r);
+    } else {
+      this.position.x = THREE.MathUtils.clamp(this.position.x, -ROOM.halfW + r, ROOM.halfW - r);
+      this.position.z = Math.max(this.position.z, -ROOM.halfL - 0.4);
+    }
+    // 개구부 밖에서는 입구 벽을 통과할 수 없다
+    if (Math.abs(this.position.x) > ENTRY.gateHalfW - r) {
+      if (prevZ > gateZ) this.position.z = Math.max(this.position.z, gateZ + r);
+      else this.position.z = Math.min(this.position.z, gateZ - r);
+    }
 
     if (this.moving) {
       const targetHeading = Math.atan2(dirX, dirZ) + Math.PI; // 모델의 -Z 가 정면

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { ROOM, worldYToThreeZ } from "./coords.js";
+import { ROOM, ENTRY, worldYToThreeZ } from "./coords.js";
 import { SECTIONS, BOUNDS } from "../laser/LaserModel.js";
 
 const SECTION_COLORS = [0x3fd0ff, 0x7dff9a, 0xffb86b];
@@ -48,9 +48,6 @@ export class Room {
   buildWalls() {
     const wallMat = new THREE.MeshStandardMaterial({ color: 0x121b23, roughness: 0.9, metalness: 0.05, side: THREE.DoubleSide });
     const h = ROOM.height;
-    // 입구 벽은 안쪽에서만 보이게(FrontSide) 두어 카메라가 입구 뒤로 빠져도 시야가 막히지 않는다.
-    const entranceMat = wallMat.clone();
-    entranceMat.side = THREE.FrontSide;
     const mk = (w, x, z, ry, mat) => {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat || wallMat);
       m.position.set(x, h / 2, z);
@@ -60,7 +57,42 @@ export class Room {
     mk(ROOM.length, -ROOM.halfW, 0, Math.PI / 2);
     mk(ROOM.length, ROOM.halfW, 0, -Math.PI / 2);
     mk(ROOM.width, 0, -ROOM.halfL, 0);
-    mk(ROOM.width, 0, ROOM.halfL, Math.PI, entranceMat);
+    // 입구 벽: 가운데 개구부를 남기고 양옆만 막는다
+    const sideW = ROOM.halfW - ENTRY.gateHalfW;
+    mk(sideW, -(ENTRY.gateHalfW + sideW / 2), ROOM.halfL, Math.PI);
+    mk(sideW, ENTRY.gateHalfW + sideW / 2, ROOM.halfL, Math.PI);
+
+    // 진입 통로(입구 벽 뒤쪽)
+    const zEnd = ROOM.halfL + ENTRY.depth;
+    const zMid = ROOM.halfL + ENTRY.depth / 2;
+    mk(ENTRY.depth, -ENTRY.halfW, zMid, Math.PI / 2);
+    mk(ENTRY.depth, ENTRY.halfW, zMid, -Math.PI / 2);
+    mk(ENTRY.halfW * 2, 0, zEnd, Math.PI);
+    const corridorFloor = new THREE.Mesh(
+      new THREE.PlaneGeometry(ENTRY.halfW * 2, ENTRY.depth),
+      new THREE.MeshStandardMaterial({ color: 0x0e151c, roughness: 0.9 })
+    );
+    corridorFloor.rotation.x = -Math.PI / 2;
+    corridorFloor.position.set(0, 0, zMid);
+    this.group.add(corridorFloor);
+    const corridorCeil = new THREE.Mesh(
+      new THREE.PlaneGeometry(ENTRY.halfW * 2, ENTRY.depth),
+      new THREE.MeshStandardMaterial({ color: 0x0a0f14, roughness: 1, side: THREE.BackSide })
+    );
+    corridorCeil.rotation.x = -Math.PI / 2;
+    corridorCeil.position.set(0, h, zMid);
+    this.group.add(corridorCeil);
+    const corridorLight = new THREE.PointLight(0x9fd8ff, 6, 10, 1.6);
+    corridorLight.position.set(0, h - 0.2, zMid);
+    this.group.add(corridorLight);
+    // 시작 위치 표시
+    const startMark = new THREE.Mesh(
+      new THREE.RingGeometry(0.4, 0.46, 40),
+      new THREE.MeshBasicMaterial({ color: 0x4ef0ff, transparent: true, opacity: 0.5, toneMapped: false, side: THREE.DoubleSide })
+    );
+    startMark.rotation.x = -Math.PI / 2;
+    startMark.position.set(0, 0.006, ROOM.halfL + 2.4);
+    this.group.add(startMark);
 
     // 벽 하단 발광 띠
     const trimMat = new THREE.MeshBasicMaterial({ color: 0x1d4b5e, toneMapped: false });
@@ -104,25 +136,41 @@ export class Room {
   }
 
   buildGates() {
-    const mk = (z, color) => {
-      const gate = new THREE.Group();
-      const frame = new THREE.Mesh(
-        new THREE.BoxGeometry(3.2, 2.6, 0.15),
-        new THREE.MeshStandardMaterial({ color: 0x1a262f, roughness: 0.6, metalness: 0.4 })
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x1a262f, roughness: 0.6, metalness: 0.4 });
+    const gw = ENTRY.gateHalfW * 2;
+    // 입구: 지나갈 수 있는 개구부 (기둥 2개 + 상단 보 + 발광 테두리)
+    const entrance = new THREE.Group();
+    for (const sx of [-1, 1]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.6, 0.2), frameMat);
+      post.position.set(sx * (ENTRY.gateHalfW + 0.09), 1.3, ROOM.halfL);
+      entrance.add(post);
+      const strip = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.04, 2.5),
+        new THREE.MeshBasicMaterial({ color: 0x4ef0ff, toneMapped: false, side: THREE.DoubleSide })
       );
-      frame.position.set(0, 1.3, z);
-      gate.add(frame);
-      const glow = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.6, 2.1),
-        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, toneMapped: false, side: THREE.DoubleSide })
-      );
-      glow.position.set(0, 1.1, z + (z > 0 ? -0.09 : 0.09));
-      gate.add(glow);
-      this.group.add(gate);
-      return gate;
-    };
-    this.entranceGate = mk(ROOM.halfL, 0x4ef0ff);   // 입구 (+Z)
-    this.exitGate = mk(-ROOM.halfL, 0xffd36b);      // 도착 (-Z)
+      strip.position.set(sx * (ENTRY.gateHalfW - 0.02), 1.25, ROOM.halfL);
+      strip.rotation.y = Math.PI / 2;
+      entrance.add(strip);
+    }
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(gw + 0.36, 0.4, 0.2), frameMat);
+    lintel.position.set(0, 2.8, ROOM.halfL);
+    entrance.add(lintel);
+    this.group.add(entrance);
+    this.entranceGate = entrance;
+
+    // 도착 게이트 (-Z): 발광 패널
+    const exit = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(gw, 2.6, 0.15), frameMat);
+    frame.position.set(0, 1.3, -ROOM.halfL);
+    exit.add(frame);
+    const glow = new THREE.Mesh(
+      new THREE.PlaneGeometry(gw - 0.6, 2.1),
+      new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0.35, toneMapped: false, side: THREE.DoubleSide })
+    );
+    glow.position.set(0, 1.1, -ROOM.halfL + 0.09);
+    exit.add(glow);
+    this.group.add(exit);
+    this.exitGate = exit;
   }
 
   buildPanels() {

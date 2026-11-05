@@ -8,7 +8,7 @@ import { LAYOUT_BY_KEY, LAYOUTS, LOOP_SECONDS, SECTIONS, createSegments, layoutK
 import { LaserRenderer } from "../laser/LaserRenderer.js";
 import { Room } from "../world/Room.js";
 import { ROOM, threeZToWorldY, toThree, worldYToThreeZ } from "../world/coords.js";
-import { Player, DEFAULT_PLAYER_SETTINGS } from "../player/Player.js";
+import { Player, DEFAULT_PLAYER_SETTINGS, START_Z } from "../player/Player.js";
 import { ThirdPersonCamera } from "../player/ThirdPersonCamera.js";
 import { Input } from "./Input.js";
 import { segmentSegmentDistanceSq } from "./collision.js";
@@ -213,7 +213,7 @@ export class Game {
   /** 구간 시작 지점으로 되돌리기 (R) */
   restartSection() {
     if (!this.layout) return;
-    const z = this.sectionStartZ ?? ROOM.halfL - 1.2;
+    const z = this.sectionStartZ ?? START_Z;
     this.player.reset(z);
     this.hitCooldown = 0.5;
     this.ui.setStatus("구간 재시작", "");
@@ -243,7 +243,7 @@ export class Game {
       return;
     }
     // section 모드: 구간 시작으로
-    this.player.reset(this.sectionStartZ ?? ROOM.halfL - 1.2);
+    this.player.reset(this.sectionStartZ ?? START_Z);
     this.hitCooldown = 0.8;
     this.ui.setStatus("레이저 접촉 — 구간 재시작", "warn");
   }
@@ -340,8 +340,6 @@ export class Game {
     }
 
     this.cameraCtl.update(rawDt, this.player.position, this.player.height);
-    // 카메라가 입구 뒤로 빠지면 입구 게이트가 시야를 가리므로 숨긴다
-    this.room.entranceGate.visible = this.camera.position.z < ROOM.halfL - 0.05;
     this.ui.drawMinimap(this.segments, this.player, this.hitMarkers, this.settings.showMinimap, this.disabledSections);
     this.composer.render();
   }
