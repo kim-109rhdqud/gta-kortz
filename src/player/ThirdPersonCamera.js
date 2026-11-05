@@ -78,8 +78,7 @@ export class ThirdPersonCamera {
     // 카메라가 벽 밖으로 나가지 않도록 방 안으로 클램프
     this._pos.y = THREE.MathUtils.clamp(this._pos.y, 0.3, ROOM.height - 0.1);
     this._pos.z = THREE.MathUtils.clamp(this._pos.z, -ROOM.halfL + 0.15, ROOM.halfL + ENTRY.depth - 0.15);
-    const halfW = this._pos.z > ROOM.halfL ? ENTRY.halfW : ROOM.halfW;
-    this._pos.x = THREE.MathUtils.clamp(this._pos.x, -halfW + 0.15, halfW - 0.15);
+    this._pos.x = THREE.MathUtils.clamp(this._pos.x, -ROOM.halfW + 0.15, ROOM.halfW - 0.15);
     if (this._first) {
       this.camera.position.copy(this._pos);
       this._first = false;

@@ -150,7 +150,7 @@ export class UI {
     c.clearRect(0, 0, W, H);
     // 진입 통로
     c.fillStyle = "rgba(120,160,190,0.08)";
-    c.fillRect(mx(-ENTRY.halfW), mz(ROOM.halfL), ENTRY.halfW * 2 * s, ENTRY.depth * s);
+    c.fillRect(mx(-ROOM.halfW), mz(ROOM.halfL), ROOM.width * s, ENTRY.depth * s);
     // 구간 틴트
     SECTIONS.forEach((sec, i) => {
       const za = sec.y0 - CY, zb = sec.y1 - CY;

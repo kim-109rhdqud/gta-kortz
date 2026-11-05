@@ -145,26 +145,13 @@ export class Player {
     this.velocity.x += (tvx - this.velocity.x) * k;
     this.velocity.z += (tvz - this.velocity.z) * k;
 
-    const prevZ = this.position.z;
     this.position.x += this.velocity.x * dt;
     this.position.z += this.velocity.z * dt;
 
-    // 벽 충돌: 본 방 / 진입 통로 / 입구 개구부
+    // 벽 충돌: 시작 구역까지 포함해 한 덩어리의 방
     const r = s.radius;
-    const gateZ = ROOM.halfL;
-    if (this.position.z > gateZ) {
-      // 통로 안
-      this.position.x = THREE.MathUtils.clamp(this.position.x, -ENTRY.halfW + r, ENTRY.halfW - r);
-      this.position.z = Math.min(this.position.z, gateZ + ENTRY.depth - r);
-    } else {
-      this.position.x = THREE.MathUtils.clamp(this.position.x, -ROOM.halfW + r, ROOM.halfW - r);
-      this.position.z = Math.max(this.position.z, -ROOM.halfL - 0.4);
-    }
-    // 개구부 밖에서는 입구 벽을 통과할 수 없다
-    if (Math.abs(this.position.x) > ENTRY.gateHalfW - r) {
-      if (prevZ > gateZ) this.position.z = Math.max(this.position.z, gateZ + r);
-      else this.position.z = Math.min(this.position.z, gateZ - r);
-    }
+    this.position.x = THREE.MathUtils.clamp(this.position.x, -ROOM.halfW + r, ROOM.halfW - r);
+    this.position.z = THREE.MathUtils.clamp(this.position.z, -ROOM.halfL - 0.4, ROOM.halfL + ENTRY.depth - r);
 
     if (this.moving) {
       const targetHeading = Math.atan2(dirX, dirZ) + Math.PI; // 모델의 -Z 가 정면

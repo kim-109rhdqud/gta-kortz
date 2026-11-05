@@ -57,32 +57,27 @@ export class Room {
     mk(ROOM.length, -ROOM.halfW, 0, Math.PI / 2);
     mk(ROOM.length, ROOM.halfW, 0, -Math.PI / 2);
     mk(ROOM.width, 0, -ROOM.halfL, 0);
-    // 입구 벽: 가운데 개구부를 남기고 양옆만 막는다
-    const sideW = ROOM.halfW - ENTRY.gateHalfW;
-    mk(sideW, -(ENTRY.gateHalfW + sideW / 2), ROOM.halfL, Math.PI);
-    mk(sideW, ENTRY.gateHalfW + sideW / 2, ROOM.halfL, Math.PI);
-
-    // 진입 통로(입구 벽 뒤쪽)
+    // 시작 구역(입구 쪽): 본 방과 같은 폭으로 그대로 이어진다. 벽 없음.
     const zEnd = ROOM.halfL + ENTRY.depth;
     const zMid = ROOM.halfL + ENTRY.depth / 2;
-    mk(ENTRY.depth, -ENTRY.halfW, zMid, Math.PI / 2);
-    mk(ENTRY.depth, ENTRY.halfW, zMid, -Math.PI / 2);
-    mk(ENTRY.halfW * 2, 0, zEnd, Math.PI);
+    mk(ENTRY.depth, -ROOM.halfW, zMid, Math.PI / 2);
+    mk(ENTRY.depth, ROOM.halfW, zMid, -Math.PI / 2);
+    mk(ROOM.width, 0, zEnd, Math.PI);
     const corridorFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(ENTRY.halfW * 2, ENTRY.depth),
+      new THREE.PlaneGeometry(ROOM.width, ENTRY.depth),
       new THREE.MeshStandardMaterial({ color: 0x0e151c, roughness: 0.9 })
     );
     corridorFloor.rotation.x = -Math.PI / 2;
     corridorFloor.position.set(0, 0, zMid);
     this.group.add(corridorFloor);
     const corridorCeil = new THREE.Mesh(
-      new THREE.PlaneGeometry(ENTRY.halfW * 2, ENTRY.depth),
+      new THREE.PlaneGeometry(ROOM.width, ENTRY.depth),
       new THREE.MeshStandardMaterial({ color: 0x0a0f14, roughness: 1, side: THREE.BackSide })
     );
     corridorCeil.rotation.x = -Math.PI / 2;
     corridorCeil.position.set(0, h, zMid);
     this.group.add(corridorCeil);
-    const corridorLight = new THREE.PointLight(0x9fd8ff, 6, 10, 1.6);
+    const corridorLight = new THREE.PointLight(0x9fd8ff, 12, 16, 1.6);
     corridorLight.position.set(0, h - 0.2, zMid);
     this.group.add(corridorLight);
     // 시작 위치 표시
@@ -137,24 +132,16 @@ export class Room {
 
   buildGates() {
     const frameMat = new THREE.MeshStandardMaterial({ color: 0x1a262f, roughness: 0.6, metalness: 0.4 });
-    const gw = ENTRY.gateHalfW * 2;
-    // 입구: 지나갈 수 있는 개구부 (기둥 2개 + 상단 보 + 발광 테두리)
+    const gw = 3.2;
+    // 입구: 벽 없이 바닥 발광선으로 레이저 구역 시작만 표시
     const entrance = new THREE.Group();
-    for (const sx of [-1, 1]) {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.6, 0.2), frameMat);
-      post.position.set(sx * (ENTRY.gateHalfW + 0.09), 1.3, ROOM.halfL);
-      entrance.add(post);
-      const strip = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.04, 2.5),
-        new THREE.MeshBasicMaterial({ color: 0x4ef0ff, toneMapped: false, side: THREE.DoubleSide })
-      );
-      strip.position.set(sx * (ENTRY.gateHalfW - 0.02), 1.25, ROOM.halfL);
-      strip.rotation.y = Math.PI / 2;
-      entrance.add(strip);
-    }
-    const lintel = new THREE.Mesh(new THREE.BoxGeometry(gw + 0.36, 0.4, 0.2), frameMat);
-    lintel.position.set(0, 2.8, ROOM.halfL);
-    entrance.add(lintel);
+    const startLine = new THREE.Mesh(
+      new THREE.PlaneGeometry(ROOM.width, 0.08),
+      new THREE.MeshBasicMaterial({ color: 0x4ef0ff, transparent: true, opacity: 0.85, toneMapped: false })
+    );
+    startLine.rotation.x = -Math.PI / 2;
+    startLine.position.set(0, 0.005, ROOM.halfL);
+    entrance.add(startLine);
     this.group.add(entrance);
     this.entranceGate = entrance;
 

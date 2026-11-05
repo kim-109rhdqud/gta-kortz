@@ -15,9 +15,7 @@ export const FLOOR_Z = BOUNDS.z0;
 
 /** 입구 벽(+Z) 뒤에 붙는 진입 통로. 플레이어는 여기서 시작해 첫 레이저보다 뒤에 선다. */
 export const ENTRY = {
-  depth: 6,      // 통로 길이 (Z) — 3인칭 카메라가 뒤에 설 공간 포함
-  halfW: 2,      // 통로 반폭 (X)
-  gateHalfW: 1.6 // 입구 개구부 반폭
+  depth: 6       // 시작 구역 길이 (Z). 폭은 본 방과 같고 벽으로 막혀 있지 않다.
 };
 
 export const ROOM = {
