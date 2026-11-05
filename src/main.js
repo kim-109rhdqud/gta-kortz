@@ -18,7 +18,3 @@ ui.showHud(false);
 // 디버깅/자동 테스트용
 window.__game = game;
 
-// 플레이 중 캔버스를 클릭하면 다시 포인터 락
-document.getElementById("game").addEventListener("click", () => {
-  if (game.state === "running" || game.state === "ready") game.cameraCtl.requestLock();
-});

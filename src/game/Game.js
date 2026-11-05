@@ -66,9 +66,6 @@ export class Game {
     window.addEventListener("resize", () => this.resize());
     this.resize();
 
-    this.cameraCtl.onLockChange = (locked) => {
-      if (!locked && this.state === "running") this.pause();
-    };
 
     loadCharacter().then((model) => {
       if (model) this.player.setModel(model);
@@ -129,7 +126,7 @@ export class Game {
   applySettings(partial) {
     this.settings = deepMerge(this.settings, partial);
     this.player.settings = { ...DEFAULT_PLAYER_SETTINGS, ...this.settings.player };
-    this.cameraCtl.sensitivity = 0.0022 * (this.settings.cameraSensitivity || 1);
+    this.cameraCtl.sensitivity = 0.0045 * (this.settings.cameraSensitivity || 1);
     saveSettings(this.settings);
     this.ui.syncSettings(this.settings);
   }

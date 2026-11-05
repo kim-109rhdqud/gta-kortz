@@ -23,7 +23,8 @@ kbd {
 }
 a { color: var(--accent); }
 
-#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+body { cursor: default; }
 
 .hidden { display: none !important; }
 
